@@ -162,16 +162,16 @@ export async function GET(request: NextRequest) {
         // If CSV has no data, try FuelEconomy.gov API
         try {
           // Try exact match first
-          let response = await fetch(
+          const response = await fetch(
             `${FUEL_ECONOMY_BASE_URL}/vehicle/menu/options?year=${year}&make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`,
             { headers: { 'Accept': 'application/xml' } }
           );
 
-          let apiVehicleIds: string[] = [];
+          const apiVehicleIds: string[] = [];
 
           if (response.ok) {
             const xml = await response.text();
-            apiVehicleIds = extractXMLArray(xml, 'menuItem', 'value');
+            apiVehicleIds.push(...extractXMLArray(xml, 'menuItem', 'value'));
           }
 
           // If no exact match found, try fuzzy matching
