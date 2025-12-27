@@ -1,21 +1,31 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import MapDisplay from '@/components/MapDisplay';
 import RouteInput from '@/components/RouteInput';
-import CostCalculator from '@/components/CostCalculator';
 import ResultsDisplay from '@/components/ResultsDisplay';
-import GasStationSelector from '@/components/GasStationSelector';
-import { RouteInfo, VehicleInfo, FuelPrice, TripCost, GasStation } from '@/types';
+import VehicleSelector from '@/components/VehicleSelector';
+import { RouteInfo, VehicleInfo, TripCost, VehicleSpec } from '@/types';
 import { calculateTripCost } from '@/utils/calculations';
 
 export default function Home() {
+  // Vehicle state (FIRST)
+  const [vehicleSpec, setVehicleSpec] = useState<VehicleSpec | null>(null);
+
+  // Route state
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [waypoints, setWaypoints] = useState<string[]>([]);
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
+
+  // Cost state
+  const [averageGasPrice, setAverageGasPrice] = useState<number>(3.50);
   const [tripCost, setTripCost] = useState<TripCost | null>(null);
-  const [selectedGasStation, setSelectedGasStation] = useState<GasStation | null>(null);
+
+  const handleVehicleSelect = (spec: VehicleSpec) => {
+    setVehicleSpec(spec);
+    console.log('[Main] Vehicle selected:', spec);
+  };
 
   const handleRouteSubmit = (newOrigin: string, newDestination: string, newWaypoints: string[]) => {
     setOrigin(newOrigin);
@@ -28,30 +38,57 @@ export default function Home() {
     setRouteInfo(newRouteInfo);
   }, []);
 
-  const handleCostCalculate = (vehicleInfo: VehicleInfo, fuelPrice: FuelPrice) => {
-    if (!routeInfo) {
-      alert('Please calculate a route first');
-      return;
+  // Auto-calculate cost when route is calculated
+  useEffect(() => {
+    if (routeInfo && vehicleSpec && origin && destination) {
+      const performCalculation = async () => {
+        try {
+          // Fetch average gas price for cities along route
+          const locations = [
+            { address: origin },
+            ...waypoints.map(w => ({ address: w })),
+            { address: destination },
+          ];
+
+          const response = await fetch('/api/gas-prices', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              locations,
+              fuelGrade: vehicleSpec.fuelType,
+            }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setAverageGasPrice(data.averagePrice);
+
+            // Calculate trip cost
+            const vehicleInfo: VehicleInfo = {
+              spec: vehicleSpec,
+              fuelEfficiency: vehicleSpec.highwayMpg, // Use highway MPG for road trips
+              unit: 'mpg',
+              tankSize: vehicleSpec.tankSize,
+              estimatedRange: vehicleSpec.highwayMpg * (vehicleSpec.tankSize || 15),
+            };
+
+            const cost = calculateTripCost(routeInfo, vehicleInfo, {
+              price: data.averagePrice,
+              currency: 'usd',
+              grade: vehicleSpec.fuelType,
+            });
+
+            setTripCost({ ...cost, vehicleInfo });
+            console.log('[Main] Trip cost calculated:', cost);
+          }
+        } catch (error) {
+          console.error('[Main] Failed to calculate cost:', error);
+        }
+      };
+
+      performCalculation();
     }
-
-    // Use gas station price if selected, otherwise use manual price
-    const actualFuelPrice = selectedGasStation?.price
-      ? { ...fuelPrice, price: selectedGasStation.price }
-      : fuelPrice;
-
-    const cost = calculateTripCost(routeInfo, vehicleInfo, actualFuelPrice);
-    setTripCost(cost);
-  };
-
-  const handleGasStationSelect = (station: GasStation | null) => {
-    setSelectedGasStation(station);
-    // Recalculate cost if we already have a calculation
-    if (tripCost && routeInfo) {
-      // We'll need to store vehicle info and fuel price to recalculate
-      // For now, just reset the cost
-      setTripCost(null);
-    }
-  };
+  }, [routeInfo, vehicleSpec, origin, destination, waypoints]);
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -70,15 +107,21 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Inputs */}
           <div className="space-y-6">
-            <RouteInput onSubmit={handleRouteSubmit} />
-            <GasStationSelector
-              route={origin && destination ? { origin, destination, waypoints } : null}
-              onStationSelect={handleGasStationSelect}
+            {/* Step 1: Vehicle Selection (FIRST) */}
+            <VehicleSelector
+              onVehicleSelect={handleVehicleSelect}
+              disabled={false}
             />
-            <CostCalculator
-              onCalculate={handleCostCalculate}
-              selectedGasStation={selectedGasStation}
-            />
+
+            {/* Step 2: Route Input (enabled after vehicle selection) */}
+            <div className={!vehicleSpec ? 'opacity-50 pointer-events-none' : ''}>
+              {!vehicleSpec && (
+                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-4 text-sm">
+                  Please select your vehicle first
+                </div>
+              )}
+              <RouteInput onSubmit={handleRouteSubmit} />
+            </div>
           </div>
 
           {/* Right Column - Map and Results */}

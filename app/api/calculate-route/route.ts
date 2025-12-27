@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { RouteLeg } from '@/types';
+
+// Helper function to convert meters to miles
+function metersToMiles(meters: number): number {
+  return meters * 0.000621371;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,7 +54,8 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-        'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline',
+        // NEW: Added routes.legs to get segment-by-segment data
+        'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs',
       },
       body: JSON.stringify(requestBody),
     });
@@ -73,10 +80,26 @@ export async function POST(request: NextRequest) {
 
     const route = data.routes[0];
 
+    // Process legs if available (segment-by-segment data)
+    const legs: RouteLeg[] = route.legs?.map((leg: { distanceMeters?: number; duration?: string; startLocation?: { address?: string }; endLocation?: { address?: string }; polyline?: { encodedPolyline?: string } }) => ({
+      startAddress: leg.startLocation?.address || '',
+      endAddress: leg.endLocation?.address || '',
+      distance: leg.distanceMeters || 0,
+      distanceMiles: metersToMiles(leg.distanceMeters || 0),
+      duration: parseInt(leg.duration?.replace('s', '') || '0'),
+      polyline: leg.polyline?.encodedPolyline,
+    })) || [];
+
+    console.log('[CalculateRoute] Found', legs.length, 'route legs');
+
     return NextResponse.json({
       distance: route.distanceMeters,
       duration: parseInt(route.duration.replace('s', '')),
       polyline: route.polyline.encodedPolyline,
+      legs, // NEW: Include segment data
+      origin, // NEW: Include for reference
+      destination, // NEW: Include for reference
+      waypoints, // NEW: Include for reference
     });
   } catch (error) {
     console.error('Route calculation error:', error);

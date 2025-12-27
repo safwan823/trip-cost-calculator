@@ -10,14 +10,48 @@ export default function ResultsDisplay({ tripCost }: ResultsDisplayProps) {
   if (!tripCost) {
     return (
       <div className="bg-gray-100 p-6 rounded-lg shadow-md text-center text-gray-500">
-        Enter route and vehicle information to see cost estimates
+        Select vehicle and calculate route to see cost estimates
       </div>
     );
   }
 
+  const vehicleInfo = tripCost.vehicleInfo;
+  const vehicleRange = vehicleInfo?.estimatedRange || 0;
+
   return (
-    <div className="bg-gradient-to-r from-blue-500 to-green-500 p-6 rounded-lg shadow-lg text-white">
-      <h2 className="text-2xl font-bold mb-4">Trip Cost Estimate</h2>
+    <div className="space-y-6">
+      {/* Vehicle Info Summary */}
+      {vehicleInfo?.spec && (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-gray-800 mb-3">Vehicle Information</h3>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="bg-gray-50 p-3 rounded">
+              <span className="text-gray-600 block text-xs">Vehicle</span>
+              <span className="font-medium text-gray-900">
+                {vehicleInfo.spec.year} {vehicleInfo.spec.make} {vehicleInfo.spec.model}
+              </span>
+            </div>
+            <div className="bg-gray-50 p-3 rounded">
+              <span className="text-gray-600 block text-xs">Fuel Type</span>
+              <span className="font-medium text-gray-900 capitalize">
+                {vehicleInfo.spec.fuelType}
+              </span>
+            </div>
+            <div className="bg-gray-50 p-3 rounded">
+              <span className="text-gray-600 block text-xs">Highway MPG</span>
+              <span className="font-medium text-gray-900">{vehicleInfo.spec.highwayMpg}</span>
+            </div>
+            <div className="bg-gray-50 p-3 rounded">
+              <span className="text-gray-600 block text-xs">Estimated Range</span>
+              <span className="font-medium text-gray-900">{vehicleRange.toFixed(0)} mi</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trip Cost Estimate */}
+      <div className="bg-gradient-to-r from-blue-500 to-green-500 p-6 rounded-lg shadow-lg text-white">
+        <h2 className="text-2xl font-bold mb-4">Trip Cost Estimate</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div className="bg-white bg-opacity-20 p-4 rounded-lg">
@@ -61,6 +95,7 @@ export default function ResultsDisplay({ tripCost }: ResultsDisplayProps) {
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 }
