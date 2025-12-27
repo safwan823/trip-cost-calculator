@@ -8,6 +8,12 @@ const POPULAR_VEHICLES: VehicleSpec[] = VEHICLE_DATABASE;
 // Updated FuelEconomy.gov API base URL
 const FUEL_ECONOMY_BASE_URL = 'https://www.fueleconomy.gov/ws/rest';
 
+// Helper to extract single value from XML string
+function extractXMLValue(xml: string, tag: string): string | null {
+  const match = xml.match(new RegExp(`<${tag}>([^<]+)</${tag}>`));
+  return match ? match[1] : null;
+}
+
 // Helper to extract all values for a tag from XML string
 function extractXMLArray(xml: string, itemTag: string, valueTag: string): string[] {
   const items: string[] = [];
@@ -129,8 +135,7 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        // Always use CSV database for options (has detailed specs)
-        // Try exact match first
+        // Try CSV database first (has detailed specs)
         let vehicles = POPULAR_VEHICLES.filter(
           v => v.year === parseInt(year) && v.make === make && v.model === model
         );
@@ -144,18 +149,73 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        const options = vehicles.map(v => ({
-          id: v.vehicleId,
-          description: `${v.fuelType} - ${v.combinedMpg} MPG combined (City: ${v.cityMpg}, Highway: ${v.highwayMpg})`,
-        }));
-
-        console.log('[VehicleSpecs] Found', options.length, 'options for', make, model, year, '(source: CSV)');
-
-        if (options.length === 0) {
-          console.warn('[VehicleSpecs] No options found - vehicle may not be in CSV database');
+        // If CSV has data, use it
+        if (vehicles.length > 0) {
+          const options = vehicles.map(v => ({
+            id: v.vehicleId,
+            description: `${v.fuelType} - ${v.combinedMpg} MPG combined (City: ${v.cityMpg}, Highway: ${v.highwayMpg})`,
+          }));
+          console.log('[VehicleSpecs] Found', options.length, 'options from CSV');
+          return NextResponse.json({ options, source: 'csv' });
         }
 
-        return NextResponse.json({ options, source: 'csv' });
+        // If CSV has no data, try FuelEconomy.gov API
+        try {
+          const response = await fetch(
+            `${FUEL_ECONOMY_BASE_URL}/vehicle/menu/options?year=${year}&make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`,
+            { headers: { 'Accept': 'application/xml' } }
+          );
+
+          if (response.ok) {
+            const xml = await response.text();
+            const apiVehicleIds = extractXMLArray(xml, 'menuItem', 'value');
+
+            // Fetch details for each vehicle ID from API
+            const apiOptions = [];
+            for (const apiId of apiVehicleIds.slice(0, 10)) { // Limit to 10 options
+              try {
+                const detailResponse = await fetch(`${FUEL_ECONOMY_BASE_URL}/vehicle/${apiId}`, {
+                  headers: { 'Accept': 'application/xml' }
+                });
+
+                if (detailResponse.ok) {
+                  const detailXml = await detailResponse.text();
+
+                  // Extract vehicle details from XML
+                  const cityMpg = extractXMLValue(detailXml, 'city08') || '0';
+                  const highwayMpg = extractXMLValue(detailXml, 'highway08') || '0';
+                  const combinedMpg = extractXMLValue(detailXml, 'comb08') || '0';
+                  const fuelType = extractXMLValue(detailXml, 'fuelType') || 'Regular';
+                  const trims = extractXMLValue(detailXml, 'trany') || '';
+
+                  apiOptions.push({
+                    id: `api_${apiId}`,
+                    description: `${fuelType} - ${combinedMpg} MPG combined (City: ${cityMpg}, Highway: ${highwayMpg}) ${trims ? `- ${trims}` : ''}`,
+                    apiVehicleId: apiId,
+                    cityMpg: parseInt(cityMpg),
+                    highwayMpg: parseInt(highwayMpg),
+                    combinedMpg: parseInt(combinedMpg),
+                    fuelType: fuelType.toLowerCase().includes('premium') ? 'premium' :
+                              fuelType.toLowerCase().includes('diesel') ? 'diesel' : 'regular'
+                  });
+                }
+              } catch (err) {
+                console.warn('[VehicleSpecs] Failed to fetch API vehicle details:', err);
+              }
+            }
+
+            if (apiOptions.length > 0) {
+              console.log('[VehicleSpecs] Found', apiOptions.length, 'options from FuelEconomy.gov API');
+              return NextResponse.json({ options: apiOptions, source: 'api' });
+            }
+          }
+        } catch (error) {
+          console.warn('[VehicleSpecs] API failed for options:', error);
+        }
+
+        // No data found anywhere
+        console.warn('[VehicleSpecs] No options found in CSV or API for', make, model, year);
+        return NextResponse.json({ options: [], source: 'none' });
       }
 
       case 'details': {
@@ -165,14 +225,70 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ error: 'Vehicle ID is required' }, { status: 400 });
         }
 
-        // Find vehicle in static database
+        // Check if this is an API-sourced vehicle (starts with "api_")
+        if (vehicleId.startsWith('api_')) {
+          const apiId = vehicleId.replace('api_', '');
+
+          try {
+            const response = await fetch(`${FUEL_ECONOMY_BASE_URL}/vehicle/${apiId}`, {
+              headers: { 'Accept': 'application/xml' }
+            });
+
+            if (response.ok) {
+              const xml = await response.text();
+
+              // Extract vehicle details from API
+              const year = parseInt(extractXMLValue(xml, 'year') || '0');
+              const make = extractXMLValue(xml, 'make') || '';
+              const model = extractXMLValue(xml, 'model') || '';
+              const cityMpg = parseInt(extractXMLValue(xml, 'city08') || '0');
+              const highwayMpg = parseInt(extractXMLValue(xml, 'highway08') || '0');
+              const combinedMpg = parseInt(extractXMLValue(xml, 'comb08') || '0');
+              const fuelTypeRaw = extractXMLValue(xml, 'fuelType') || 'Regular';
+
+              const fuelType = fuelTypeRaw.toLowerCase().includes('premium') ? 'premium' :
+                              fuelTypeRaw.toLowerCase().includes('diesel') ? 'diesel' : 'regular';
+
+              // Estimate tank size based on vehicle class
+              let tankSize = 15; // Default sedan
+              if (combinedMpg < 18) {
+                tankSize = 22; // Truck/SUV
+              } else if (combinedMpg < 25) {
+                tankSize = 18; // Larger sedan/small SUV
+              } else if (combinedMpg > 35) {
+                tankSize = 11; // Small car
+              }
+
+              const vehicleSpec: VehicleSpec = {
+                year,
+                make,
+                model,
+                vehicleId: parseInt(apiId),
+                fuelType,
+                cityMpg,
+                highwayMpg,
+                combinedMpg,
+                tankSize,
+                tankSizeSource: 'estimated'
+              };
+
+              console.log('[VehicleSpecs] Vehicle details from API:', vehicleSpec);
+              return NextResponse.json(vehicleSpec);
+            }
+          } catch (error) {
+            console.error('[VehicleSpecs] Failed to fetch API vehicle details:', error);
+            return NextResponse.json({ error: 'Failed to fetch vehicle from API' }, { status: 500 });
+          }
+        }
+
+        // Find vehicle in static CSV database
         const vehicle = POPULAR_VEHICLES.find(v => v.vehicleId === parseInt(vehicleId));
 
         if (!vehicle) {
           return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 });
         }
 
-        console.log('[VehicleSpecs] Vehicle details:', vehicle);
+        console.log('[VehicleSpecs] Vehicle details from CSV:', vehicle);
         return NextResponse.json(vehicle);
       }
 
