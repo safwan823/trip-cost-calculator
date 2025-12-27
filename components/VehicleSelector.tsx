@@ -138,32 +138,85 @@ export default function VehicleSelector({ onVehicleSelect, disabled = false }: V
     }
   }
 
-  function handleReset() {
+  function handleEditYear() {
     setStep('year');
-    setSelectedYear(null);
     setSelectedMake('');
     setSelectedModel('');
     setVehicleSpec(null);
     setMakes([]);
     setModels([]);
     setOptions([]);
-    setError('');
+  }
+
+  function handleEditMake() {
+    setStep('make');
+    setSelectedModel('');
+    setVehicleSpec(null);
+    setModels([]);
+    setOptions([]);
+  }
+
+  function handleEditModel() {
+    setStep('model');
+    setVehicleSpec(null);
+    setOptions([]);
+  }
+
+  function handleEditOption() {
+    setStep('option');
+    setVehicleSpec(null);
   }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-gray-800">Step 1: Select Your Vehicle</h2>
-        {step !== 'year' && (
-          <button
-            onClick={handleReset}
-            className="text-sm text-blue-600 hover:text-blue-800"
-            disabled={disabled}
-          >
-            Start Over
-          </button>
-        )}
       </div>
+
+      {/* Breadcrumb navigation - show selected values with edit buttons */}
+      {(selectedYear || selectedMake || selectedModel) && (
+        <div className="flex flex-wrap gap-2 text-sm">
+          {selectedYear && (
+            <div className="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full">
+              <span className="text-gray-700">Year: <span className="font-medium">{selectedYear}</span></span>
+              <button
+                onClick={handleEditYear}
+                className="ml-1 text-blue-600 hover:text-blue-800"
+                disabled={disabled}
+                title="Change year"
+              >
+                ✏️
+              </button>
+            </div>
+          )}
+          {selectedMake && (
+            <div className="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full">
+              <span className="text-gray-700">Make: <span className="font-medium">{selectedMake}</span></span>
+              <button
+                onClick={handleEditMake}
+                className="ml-1 text-blue-600 hover:text-blue-800"
+                disabled={disabled}
+                title="Change make"
+              >
+                ✏️
+              </button>
+            </div>
+          )}
+          {selectedModel && (
+            <div className="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full">
+              <span className="text-gray-700">Model: <span className="font-medium">{selectedModel}</span></span>
+              <button
+                onClick={handleEditModel}
+                className="ml-1 text-blue-600 hover:text-blue-800"
+                disabled={disabled}
+                title="Change model"
+              >
+                ✏️
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
@@ -289,9 +342,19 @@ export default function VehicleSelector({ onVehicleSelect, disabled = false }: V
           {step === 'review' && vehicleSpec && (
             <div className="space-y-4">
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h3 className="font-semibold text-blue-900 text-lg mb-3">
-                  {vehicleSpec.year} {vehicleSpec.make} {vehicleSpec.model}
-                </h3>
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-semibold text-blue-900 text-lg">
+                    {vehicleSpec.year} {vehicleSpec.make} {vehicleSpec.model}
+                  </h3>
+                  <button
+                    onClick={handleEditOption}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                    disabled={disabled}
+                    title="Change trim/option"
+                  >
+                    ✏️ Change Trim
+                  </button>
+                </div>
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="bg-white p-3 rounded">

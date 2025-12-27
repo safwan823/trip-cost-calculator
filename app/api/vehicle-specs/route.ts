@@ -129,18 +129,33 @@ export async function GET(request: NextRequest) {
           );
         }
 
-        // Find matching vehicles and return as options
-        const vehicles = POPULAR_VEHICLES.filter(
+        // Always use CSV database for options (has detailed specs)
+        // Try exact match first
+        let vehicles = POPULAR_VEHICLES.filter(
           v => v.year === parseInt(year) && v.make === make && v.model === model
         );
 
+        // If no exact match, try case-insensitive
+        if (vehicles.length === 0) {
+          vehicles = POPULAR_VEHICLES.filter(
+            v => v.year === parseInt(year) &&
+                 v.make.toLowerCase() === make.toLowerCase() &&
+                 v.model.toLowerCase() === model.toLowerCase()
+          );
+        }
+
         const options = vehicles.map(v => ({
           id: v.vehicleId,
-          description: `${v.model} - ${v.fuelType} (${v.combinedMpg} MPG)`,
+          description: `${v.fuelType} - ${v.combinedMpg} MPG combined (City: ${v.cityMpg}, Highway: ${v.highwayMpg})`,
         }));
 
-        console.log('[VehicleSpecs] Found', options.length, 'options for', make, model, year);
-        return NextResponse.json({ options });
+        console.log('[VehicleSpecs] Found', options.length, 'options for', make, model, year, '(source: CSV)');
+
+        if (options.length === 0) {
+          console.warn('[VehicleSpecs] No options found - vehicle may not be in CSV database');
+        }
+
+        return NextResponse.json({ options, source: 'csv' });
       }
 
       case 'details': {
