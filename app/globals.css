@@ -2,23 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom scrollbar for better UX */
+:root {
+  --primary-yellow: #FFC107;
+  --primary-dark: #1a1a1a;
+  --secondary-dark: #2a2a2a;
+  --accent-yellow: #FFD54F;
+  --text-light: #e0e0e0;
+  --text-dark: #121212;
+}
+
+body {
+  background-color: var(--primary-dark);
+  color: var(--text-light);
+}
+
+/* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--secondary-dark);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
+  background: var(--primary-yellow);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--accent-yellow);
 }
 
 /* Smooth scrolling */
@@ -26,54 +39,102 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Focus styles for accessibility */
+/* Focus styles */
 input:focus,
 button:focus,
 select:focus {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--primary-yellow);
   outline-offset: 2px;
 }
 
-/* Google Maps Autocomplete Dropdown Styling */
+/* Glass effect */
+.glass-card {
+  background: rgba(42, 42, 42, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 193, 7, 0.1);
+}
+
+/* Glow effect */
+.glow-yellow {
+  box-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
+}
+
+/* Animated gradient */
+.animated-gradient {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%);
+  background-size: 200% 200%;
+  animation: gradient 3s ease infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Pulse animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 30px rgba(255, 193, 7, 0.5);
+  }
+}
+
+/* Google Maps Autocomplete Dropdown Styling - Dark Theme */
 .pac-container {
   z-index: 9999 !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-  margin-top: 4px !important;
-  border: 1px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 30px rgba(255, 193, 7, 0.2) !important;
+  margin-top: 8px !important;
+  border: 1px solid rgba(255, 193, 7, 0.3) !important;
   font-family: inherit !important;
+  background: #2a2a2a !important;
 }
 
 .pac-item {
-  padding: 10px 12px !important;
+  padding: 12px 16px !important;
   font-size: 14px !important;
   cursor: pointer !important;
   border: none !important;
   line-height: 1.5 !important;
+  background: #2a2a2a !important;
+  color: #e0e0e0 !important;
+  border-bottom: 1px solid rgba(255, 193, 7, 0.1) !important;
 }
 
 .pac-item:hover {
-  background-color: #f3f4f6 !important;
+  background-color: #333 !important;
 }
 
 .pac-item-selected {
-  background-color: #eff6ff !important;
+  background-color: rgba(255, 193, 7, 0.1) !important;
 }
 
 .pac-icon {
   margin-top: 3px !important;
+  filter: invert(1) sepia(1) saturate(5) hue-rotate(10deg) !important;
 }
 
 .pac-item-query {
   font-weight: 500 !important;
-  color: #111827 !important;
+  color: #FFC107 !important;
 }
 
 .pac-matched {
   font-weight: 600 !important;
+  color: #FFD54F !important;
 }
 
-/* Ensure dropdown appears above other elements */
 .pac-container:after {
   background-image: none !important;
   height: 0 !important;
