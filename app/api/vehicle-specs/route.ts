@@ -2,8 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { VehicleSpec } from '@/types';
 import { VEHICLE_DATABASE } from './database';
 
-// Use comprehensive vehicle database from CSV (4,563 vehicles)
+// Use comprehensive vehicle database from CSV as fallback (19,435 vehicles)
 const POPULAR_VEHICLES: VehicleSpec[] = VEHICLE_DATABASE;
+
+// Updated FuelEconomy.gov API base URL
+const FUEL_ECONOMY_BASE_URL = 'https://www.fueleconomy.gov/ws/rest';
+
+// Helper to extract all values for a tag from XML string
+function extractXMLArray(xml: string, itemTag: string, valueTag: string): string[] {
+  const items: string[] = [];
+  const regex = new RegExp(`<${itemTag}>.*?<${valueTag}>([^<]+)</${valueTag}>.*?</${itemTag}>`, 'g');
+  let match;
+  while ((match = regex.exec(xml)) !== null) {
+    items.push(match[1]);
+  }
+  return items;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,10 +28,26 @@ export async function GET(request: NextRequest) {
 
     switch (action) {
       case 'years': {
-        // Return unique years from static database
+        try {
+          // Try FuelEconomy.gov API first
+          const response = await fetch(`${FUEL_ECONOMY_BASE_URL}/vehicle/menu/year`, {
+            headers: { 'Accept': 'application/xml' },
+          });
+
+          if (response.ok) {
+            const xml = await response.text();
+            const years = extractXMLArray(xml, 'menuItem', 'value').map(y => parseInt(y));
+            console.log('[VehicleSpecs] Found', years.length, 'years from API');
+            return NextResponse.json({ years, source: 'api' });
+          }
+        } catch (error) {
+          console.warn('[VehicleSpecs] API failed, using CSV fallback:', error);
+        }
+
+        // Fallback to CSV database
         const years = Array.from(new Set(POPULAR_VEHICLES.map(v => v.year))).sort((a, b) => b - a);
-        console.log('[VehicleSpecs] Found', years.length, 'years');
-        return NextResponse.json({ years });
+        console.log('[VehicleSpecs] Found', years.length, 'years from CSV fallback');
+        return NextResponse.json({ years, source: 'csv' });
       }
 
       case 'makes': {
@@ -26,13 +56,29 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ error: 'Year is required' }, { status: 400 });
         }
 
-        // Return unique makes for the given year
+        try {
+          // Try FuelEconomy.gov API first
+          const response = await fetch(`${FUEL_ECONOMY_BASE_URL}/vehicle/menu/make?year=${year}`, {
+            headers: { 'Accept': 'application/xml' },
+          });
+
+          if (response.ok) {
+            const xml = await response.text();
+            const makes = extractXMLArray(xml, 'menuItem', 'value').sort();
+            console.log('[VehicleSpecs] Found', makes.length, 'makes for year', year, 'from API');
+            return NextResponse.json({ makes, source: 'api' });
+          }
+        } catch (error) {
+          console.warn('[VehicleSpecs] API failed, using CSV fallback:', error);
+        }
+
+        // Fallback to CSV database
         const makes = Array.from(new Set(
           POPULAR_VEHICLES.filter(v => v.year === parseInt(year)).map(v => v.make)
         )).sort();
 
-        console.log('[VehicleSpecs] Found', makes.length, 'makes for year', year);
-        return NextResponse.json({ makes });
+        console.log('[VehicleSpecs] Found', makes.length, 'makes for year', year, 'from CSV');
+        return NextResponse.json({ makes, source: 'csv' });
       }
 
       case 'models': {
@@ -43,15 +89,32 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ error: 'Year and make are required' }, { status: 400 });
         }
 
-        // Return unique models for the given year and make
+        try {
+          // Try FuelEconomy.gov API first
+          const response = await fetch(
+            `${FUEL_ECONOMY_BASE_URL}/vehicle/menu/model?year=${year}&make=${encodeURIComponent(make)}`,
+            { headers: { 'Accept': 'application/xml' } }
+          );
+
+          if (response.ok) {
+            const xml = await response.text();
+            const models = extractXMLArray(xml, 'menuItem', 'value').sort();
+            console.log('[VehicleSpecs] Found', models.length, 'models for', make, year, 'from API');
+            return NextResponse.json({ models, source: 'api' });
+          }
+        } catch (error) {
+          console.warn('[VehicleSpecs] API failed, using CSV fallback:', error);
+        }
+
+        // Fallback to CSV database
         const models = Array.from(new Set(
           POPULAR_VEHICLES
             .filter(v => v.year === parseInt(year) && v.make === make)
             .map(v => v.model)
         )).sort();
 
-        console.log('[VehicleSpecs] Found', models.length, 'models for', make, year);
-        return NextResponse.json({ models });
+        console.log('[VehicleSpecs] Found', models.length, 'models for', make, year, 'from CSV');
+        return NextResponse.json({ models, source: 'csv' });
       }
 
       case 'options': {

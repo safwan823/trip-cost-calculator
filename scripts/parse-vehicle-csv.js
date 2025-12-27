@@ -25,7 +25,7 @@ for (let i = 1; i < lines.length; i++) {
   const mpg = parseFloat(parts[3]);
 
   // Skip invalid data
-  if (!year || year < 2015 || year > 2025) continue; // Focus on recent vehicles
+  if (!year || year < 1980 || year > 2026) continue; // Vehicles from 1980-2026
   if (!make || !model) continue;
   if (!mpg || mpg <= 0 || mpg > 60) continue; // Exclude electric/hybrid and invalid data
 
