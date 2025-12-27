@@ -12,7 +12,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Build the request body
-    const requestBody: any = {
+    const requestBody: {
+      origin: { address: string };
+      destination: { address: string };
+      travelMode: string;
+      routingPreference: string;
+      computeAlternativeRoutes: boolean;
+      languageCode: string;
+      units: string;
+      intermediates?: Array<{ address: string }>;
+    } = {
       origin: {
         address: origin,
       },

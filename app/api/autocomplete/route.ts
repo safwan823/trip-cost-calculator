@@ -37,7 +37,12 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
 
     // Transform the response to match our frontend format
-    const predictions = (data.suggestions || []).map((suggestion: any) => ({
+    const predictions = (data.suggestions || []).map((suggestion: {
+      placePrediction?: {
+        text?: { text?: string };
+        placeId?: string;
+      };
+    }) => ({
       description: suggestion.placePrediction?.text?.text || '',
       placeId: suggestion.placePrediction?.placeId || '',
     }));
