@@ -10,12 +10,11 @@ interface VehicleSelectorProps {
 }
 
 export default function VehicleSelector({ onVehicleSelect, disabled = false }: VehicleSelectorProps) {
-  const [step, setStep] = useState<'year' | 'make' | 'model' | 'option' | 'review'>('year');
+  const [step, setStep] = useState<'year' | 'make' | 'model' | 'review'>('year');
 
   const [years, setYears] = useState<number[]>([]);
   const [makes, setMakes] = useState<string[]>([]);
   const [models, setModels] = useState<string[]>([]);
-  const [options, setOptions] = useState<Array<{ id: number; description: string }>>([]);
 
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedMake, setSelectedMake] = useState<string>('');
@@ -97,12 +96,20 @@ export default function VehicleSelector({ onVehicleSelect, disabled = false }: V
       );
       if (!res.ok) throw new Error('Failed to fetch options');
       const data = await res.json();
-      setOptions(data.options || []);
-      setStep('option');
+      const options = data.options || [];
+
+      if (options.length === 0) {
+        setError('No vehicle data found for this model.');
+        setLoading(false);
+        return;
+      }
+
+      // Automatically select the first option (we just need MPG data, trim doesn't matter)
+      const firstOption = options[0];
+      await handleOptionSelect(firstOption.id);
     } catch (err) {
-      setError('Failed to load options. Please try again.');
+      setError('Failed to load vehicle data. Please try again.');
       console.error(err);
-    } finally {
       setLoading(false);
     }
   }
@@ -145,7 +152,6 @@ export default function VehicleSelector({ onVehicleSelect, disabled = false }: V
     setVehicleSpec(null);
     setMakes([]);
     setModels([]);
-    setOptions([]);
   }
 
   function handleEditMake() {
@@ -153,17 +159,10 @@ export default function VehicleSelector({ onVehicleSelect, disabled = false }: V
     setSelectedModel('');
     setVehicleSpec(null);
     setModels([]);
-    setOptions([]);
   }
 
   function handleEditModel() {
     setStep('model');
-    setVehicleSpec(null);
-    setOptions([]);
-  }
-
-  function handleEditOption() {
-    setStep('option');
     setVehicleSpec(null);
   }
 
@@ -310,50 +309,14 @@ export default function VehicleSelector({ onVehicleSelect, disabled = false }: V
             </div>
           )}
 
-          {/* Step 4: Option/Trim */}
-          {step === 'option' && selectedModel && (
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Vehicle:</span> {selectedYear} {selectedMake}{' '}
-                {selectedModel}
-              </p>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Trim / Option</label>
-                <select
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  onChange={(e) => handleOptionSelect(Number(e.target.value))}
-                  disabled={disabled}
-                  defaultValue=""
-                >
-                  <option value="" disabled>
-                    Select Option...
-                  </option>
-                  {options.map((opt) => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.description}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-
-          {/* Step 5: Review */}
+          {/* Step 4: Review */}
           {step === 'review' && vehicleSpec && (
             <div className="space-y-4">
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <div className="flex justify-between items-start mb-3">
+                <div className="mb-3">
                   <h3 className="font-semibold text-blue-900 text-lg">
                     {vehicleSpec.year} {vehicleSpec.make} {vehicleSpec.model}
                   </h3>
-                  <button
-                    onClick={handleEditOption}
-                    className="text-sm text-blue-600 hover:text-blue-800"
-                    disabled={disabled}
-                    title="Change trim/option"
-                  >
-                    ✏️ Change Trim
-                  </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
