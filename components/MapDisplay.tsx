@@ -41,9 +41,9 @@ export default function MapDisplay({ origin, destination, onRouteCalculated }: M
       return;
     }
 
-    // Create and load script
+    // Create and load script with loading=async for new Places API
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places,geometry`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places,geometry&loading=async`;
     script.async = true;
     script.defer = true;
 
