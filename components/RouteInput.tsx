@@ -8,70 +8,56 @@ interface RouteInputProps {
 }
 
 export default function RouteInput({ onSubmit }: RouteInputProps) {
-  const [originSelected, setOriginSelected] = useState('');
-  const [destinationSelected, setDestinationSelected] = useState('');
+  const [origin, setOrigin] = useState('');
+  const [destination, setDestination] = useState('');
   const originInputRef = useRef<HTMLInputElement>(null);
   const destinationInputRef = useRef<HTMLInputElement>(null);
-  const initialized = useRef(false);
+  const autocompleteInit = useRef(false);
 
-  // Initialize Google Places Autocomplete
   useEffect(() => {
-    if (initialized.current) return;
+    if (autocompleteInit.current) return;
 
     const initAutocomplete = () => {
-      // Wait for Google Maps to load
       if (!window.google?.maps?.places?.Autocomplete) {
-        setTimeout(initAutocomplete, 100);
+        setTimeout(initAutocomplete, 200);
         return;
       }
 
-      if (initialized.current) return;
+      if (autocompleteInit.current) return;
 
       try {
-        // Initialize origin autocomplete
         if (originInputRef.current) {
-          const originAutocomplete = new window.google.maps.places.Autocomplete(
-            originInputRef.current,
-            {
-              fields: ['formatted_address', 'name'],
-              types: ['geocode'],
-            }
-          );
-
-          originAutocomplete.addListener('place_changed', () => {
-            const place = originAutocomplete.getPlace();
-            if (place?.formatted_address || place?.name) {
-              const address = place.formatted_address || place.name;
-              console.log('Origin selected:', address);
-              setOriginSelected(address);
+          const originAC = new window.google.maps.places.Autocomplete(originInputRef.current, {
+            fields: ['formatted_address', 'name'],
+          });
+          originAC.addListener('place_changed', () => {
+            const place = originAC.getPlace();
+            if (place?.formatted_address) {
+              setOrigin(place.formatted_address);
+            } else if (place?.name) {
+              setOrigin(place.name);
             }
           });
         }
 
-        // Initialize destination autocomplete
         if (destinationInputRef.current) {
-          const destinationAutocomplete = new window.google.maps.places.Autocomplete(
-            destinationInputRef.current,
-            {
-              fields: ['formatted_address', 'name'],
-              types: ['geocode'],
-            }
-          );
-
-          destinationAutocomplete.addListener('place_changed', () => {
-            const place = destinationAutocomplete.getPlace();
-            if (place?.formatted_address || place?.name) {
-              const address = place.formatted_address || place.name;
-              console.log('Destination selected:', address);
-              setDestinationSelected(address);
+          const destAC = new window.google.maps.places.Autocomplete(destinationInputRef.current, {
+            fields: ['formatted_address', 'name'],
+          });
+          destAC.addListener('place_changed', () => {
+            const place = destAC.getPlace();
+            if (place?.formatted_address) {
+              setDestination(place.formatted_address);
+            } else if (place?.name) {
+              setDestination(place.name);
             }
           });
         }
 
-        initialized.current = true;
-        console.log('✓ Google Places Autocomplete initialized - start typing to see dropdown');
-      } catch (error) {
-        console.error('Autocomplete error:', error);
+        autocompleteInit.current = true;
+        console.log('✓ Autocomplete ready');
+      } catch (err) {
+        console.error('Autocomplete error:', err);
       }
     };
 
@@ -81,11 +67,8 @@ export default function RouteInput({ onSubmit }: RouteInputProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const origin = originInputRef.current?.value || '';
-    const destination = destinationInputRef.current?.value || '';
-
     if (!origin.trim() || !destination.trim()) {
-      alert('Please select both origin and destination from the dropdown');
+      alert('Please enter both starting location and destination');
       return;
     }
 
@@ -102,14 +85,14 @@ export default function RouteInput({ onSubmit }: RouteInputProps) {
           ref={originInputRef}
           type="text"
           id="origin"
-          placeholder="Type to search... (e.g., New York, NY)"
+          value={origin}
+          onChange={(e) => setOrigin(e.target.value)}
+          placeholder="Start typing... (e.g., New York, NY)"
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
-        {originSelected && (
-          <p className="text-xs text-green-600 mt-1">
-            ✓ Selected: {originSelected}
-          </p>
-        )}
+        <p className="text-xs text-gray-500 mt-1">
+          Type for autocomplete suggestions or enter manually
+        </p>
       </div>
 
       <div>
@@ -120,14 +103,14 @@ export default function RouteInput({ onSubmit }: RouteInputProps) {
           ref={destinationInputRef}
           type="text"
           id="destination"
-          placeholder="Type to search... (e.g., Boston, MA)"
+          value={destination}
+          onChange={(e) => setDestination(e.target.value)}
+          placeholder="Start typing... (e.g., Boston, MA)"
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
-        {destinationSelected && (
-          <p className="text-xs text-green-600 mt-1">
-            ✓ Selected: {destinationSelected}
-          </p>
-        )}
+        <p className="text-xs text-gray-500 mt-1">
+          Type for autocomplete suggestions or enter manually
+        </p>
       </div>
 
       <button

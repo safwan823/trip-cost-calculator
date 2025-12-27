@@ -58,13 +58,6 @@ export default function MapDisplay({ origin, destination, onRouteCalculated }: M
     };
 
     document.head.appendChild(script);
-
-    return () => {
-      // Cleanup if component unmounts
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
   }, []);
 
   // Initialize map once script is loaded
