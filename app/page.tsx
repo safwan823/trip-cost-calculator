@@ -5,7 +5,8 @@ import MapDisplay from '@/components/MapDisplay';
 import RouteInput from '@/components/RouteInput';
 import CostCalculator from '@/components/CostCalculator';
 import ResultsDisplay from '@/components/ResultsDisplay';
-import { RouteInfo, VehicleInfo, FuelPrice, TripCost } from '@/types';
+import GasStationSelector from '@/components/GasStationSelector';
+import { RouteInfo, VehicleInfo, FuelPrice, TripCost, GasStation } from '@/types';
 import { calculateTripCost } from '@/utils/calculations';
 
 export default function Home() {
@@ -14,6 +15,7 @@ export default function Home() {
   const [waypoints, setWaypoints] = useState<string[]>([]);
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
   const [tripCost, setTripCost] = useState<TripCost | null>(null);
+  const [selectedGasStation, setSelectedGasStation] = useState<GasStation | null>(null);
 
   const handleRouteSubmit = (newOrigin: string, newDestination: string, newWaypoints: string[]) => {
     setOrigin(newOrigin);
@@ -32,8 +34,23 @@ export default function Home() {
       return;
     }
 
-    const cost = calculateTripCost(routeInfo, vehicleInfo, fuelPrice);
+    // Use gas station price if selected, otherwise use manual price
+    const actualFuelPrice = selectedGasStation?.price
+      ? { ...fuelPrice, price: selectedGasStation.price }
+      : fuelPrice;
+
+    const cost = calculateTripCost(routeInfo, vehicleInfo, actualFuelPrice);
     setTripCost(cost);
+  };
+
+  const handleGasStationSelect = (station: GasStation | null) => {
+    setSelectedGasStation(station);
+    // Recalculate cost if we already have a calculation
+    if (tripCost && routeInfo) {
+      // We'll need to store vehicle info and fuel price to recalculate
+      // For now, just reset the cost
+      setTripCost(null);
+    }
   };
 
   return (
@@ -54,7 +71,14 @@ export default function Home() {
           {/* Left Column - Inputs */}
           <div className="space-y-6">
             <RouteInput onSubmit={handleRouteSubmit} />
-            <CostCalculator onCalculate={handleCostCalculate} />
+            <GasStationSelector
+              route={origin && destination ? { origin, destination, waypoints } : null}
+              onStationSelect={handleGasStationSelect}
+            />
+            <CostCalculator
+              onCalculate={handleCostCalculate}
+              selectedGasStation={selectedGasStation}
+            />
           </div>
 
           {/* Right Column - Map and Results */}

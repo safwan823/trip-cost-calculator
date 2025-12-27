@@ -1,21 +1,27 @@
 'use client';
 
 import { useState } from 'react';
-import { VehicleInfo, FuelPrice } from '@/types';
+import { VehicleInfo, FuelPrice, GasStation } from '@/types';
 
 interface CostCalculatorProps {
   onCalculate: (vehicleInfo: VehicleInfo, fuelPrice: FuelPrice) => void;
+  selectedGasStation?: GasStation | null;
 }
 
-export default function CostCalculator({ onCalculate }: CostCalculatorProps) {
+export default function CostCalculator({ onCalculate, selectedGasStation }: CostCalculatorProps) {
   const [fuelEfficiency, setFuelEfficiency] = useState('25');
   const [unit, setUnit] = useState<'mpg' | 'l100km'>('mpg');
   const [price, setPrice] = useState('3.50');
   const [currency] = useState<'usd' | 'cad'>('usd');
 
+  // Display the selected gas station price if available, otherwise use manual price
+  const displayPrice = selectedGasStation?.price
+    ? selectedGasStation.price.toFixed(2)
+    : price;
+
   const handleCalculate = () => {
     const efficiency = parseFloat(fuelEfficiency);
-    const fuelPriceNum = parseFloat(price);
+    const fuelPriceNum = parseFloat(displayPrice);
 
     if (isNaN(efficiency) || efficiency <= 0) {
       alert('Please enter a valid fuel efficiency');
@@ -74,15 +80,24 @@ export default function CostCalculator({ onCalculate }: CostCalculatorProps) {
         <input
           type="number"
           id="price"
-          value={price}
+          value={displayPrice}
           onChange={(e) => setPrice(e.target.value)}
           step="0.01"
           min="0.01"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          disabled={selectedGasStation?.price !== undefined}
+          className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            selectedGasStation?.price !== undefined ? 'bg-gray-100 cursor-not-allowed' : ''
+          }`}
         />
-        <p className="text-xs text-gray-500 mt-1">
-          Check local gas station prices or use GasBuddy.com
-        </p>
+        {selectedGasStation ? (
+          <p className="text-xs text-green-600 mt-1 font-medium">
+            ✓ Using price from {selectedGasStation.name}
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500 mt-1">
+            Select a gas station above or enter price manually
+          </p>
+        )}
       </div>
 
       <button

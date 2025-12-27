@@ -34,3 +34,14 @@ export interface TripInputs {
   vehicleInfo: VehicleInfo;
   fuelPrice: FuelPrice;
 }
+
+// Gas station information
+export interface GasStation {
+  name: string;
+  address: string;
+  location: { lat: number; lng: number };
+  city: string;
+  price?: number;           // Actual gas price (user can set or from API)
+  priceLevel?: number;      // 1-4 rating (1 = cheapest, 4 = most expensive)
+  distance?: number;        // Distance from route in meters
+}
