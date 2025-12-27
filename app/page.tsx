@@ -19,7 +19,6 @@ export default function Home() {
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
 
   // Cost state
-  const [averageGasPrice, setAverageGasPrice] = useState<number>(3.50);
   const [tripCost, setTripCost] = useState<TripCost | null>(null);
 
   const handleVehicleSelect = (spec: VehicleSpec) => {
@@ -61,7 +60,6 @@ export default function Home() {
 
           if (response.ok) {
             const data = await response.json();
-            setAverageGasPrice(data.averagePrice);
 
             // Calculate trip cost
             const vehicleInfo: VehicleInfo = {

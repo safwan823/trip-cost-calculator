@@ -20,7 +20,6 @@ export default function VehicleSelector({ onVehicleSelect, disabled = false }: V
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedMake, setSelectedMake] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
 
   const [vehicleSpec, setVehicleSpec] = useState<VehicleSpec | null>(null);
   const [tankSize, setTankSize] = useState<number>(15);
@@ -110,7 +109,6 @@ export default function VehicleSelector({ onVehicleSelect, disabled = false }: V
 
   async function handleOptionSelect(optionId: number) {
     try {
-      setSelectedOption(optionId);
       setLoading(true);
       setError('');
 
@@ -145,7 +143,6 @@ export default function VehicleSelector({ onVehicleSelect, disabled = false }: V
     setSelectedYear(null);
     setSelectedMake('');
     setSelectedModel('');
-    setSelectedOption(null);
     setVehicleSpec(null);
     setMakes([]);
     setModels([]);
