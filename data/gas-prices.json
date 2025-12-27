@@ -1,0 +1,166 @@
+{
+  "lastUpdated": "2025-12-27",
+  "source": "manual",
+  "cities": {
+    "New York": {
+      "regular": 3.45,
+      "premium": 4.15,
+      "diesel": 3.85
+    },
+    "Boston": {
+      "regular": 3.42,
+      "premium": 4.1,
+      "diesel": 3.8
+    },
+    "Philadelphia": {
+      "regular": 3.38,
+      "premium": 4.05,
+      "diesel": 3.75
+    },
+    "Washington": {
+      "regular": 3.35,
+      "premium": 4,
+      "diesel": 3.7
+    },
+    "Baltimore": {
+      "regular": 3.36,
+      "premium": 4.02,
+      "diesel": 3.72
+    },
+    "Atlanta": {
+      "regular": 3.15,
+      "premium": 3.75,
+      "diesel": 3.5
+    },
+    "Miami": {
+      "regular": 3.3,
+      "premium": 3.9,
+      "diesel": 3.65
+    },
+    "Charlotte": {
+      "regular": 3.2,
+      "premium": 3.8,
+      "diesel": 3.55
+    },
+    "Jacksonville": {
+      "regular": 3.22,
+      "premium": 3.82,
+      "diesel": 3.57
+    },
+    "Nashville": {
+      "regular": 3.18,
+      "premium": 3.78,
+      "diesel": 3.53
+    },
+    "Chicago": {
+      "regular": 3.55,
+      "premium": 4.2,
+      "diesel": 3.9
+    },
+    "Detroit": {
+      "regular": 3.5,
+      "premium": 4.15,
+      "diesel": 3.85
+    },
+    "Indianapolis": {
+      "regular": 3.25,
+      "premium": 3.85,
+      "diesel": 3.6
+    },
+    "Columbus": {
+      "regular": 3.28,
+      "premium": 3.88,
+      "diesel": 3.63
+    },
+    "Milwaukee": {
+      "regular": 3.45,
+      "premium": 4.05,
+      "diesel": 3.8
+    },
+    "Houston": {
+      "regular": 3.05,
+      "premium": 3.65,
+      "diesel": 3.4
+    },
+    "Dallas": {
+      "regular": 3.08,
+      "premium": 3.68,
+      "diesel": 3.43
+    },
+    "San Antonio": {
+      "regular": 3.1,
+      "premium": 3.7,
+      "diesel": 3.45
+    },
+    "Austin": {
+      "regular": 3.12,
+      "premium": 3.72,
+      "diesel": 3.47
+    },
+    "New Orleans": {
+      "regular": 3.15,
+      "premium": 3.75,
+      "diesel": 3.5
+    },
+    "Los Angeles": {
+      "regular": 4.85,
+      "premium": 5.45,
+      "diesel": 5.15
+    },
+    "San Francisco": {
+      "regular": 5.15,
+      "premium": 5.75,
+      "diesel": 5.45
+    },
+    "San Diego": {
+      "regular": 4.75,
+      "premium": 5.35,
+      "diesel": 5.05
+    },
+    "Seattle": {
+      "regular": 4.55,
+      "premium": 5.15,
+      "diesel": 4.85
+    },
+    "Portland": {
+      "regular": 4.45,
+      "premium": 5.05,
+      "diesel": 4.75
+    },
+    "Phoenix": {
+      "regular": 3.65,
+      "premium": 4.25,
+      "diesel": 3.95
+    },
+    "Las Vegas": {
+      "regular": 4.15,
+      "premium": 4.75,
+      "diesel": 4.45
+    },
+    "Denver": {
+      "regular": 3.4,
+      "premium": 4,
+      "diesel": 3.7
+    },
+    "Salt Lake City": {
+      "regular": 3.55,
+      "premium": 4.15,
+      "diesel": 3.85
+    },
+    "Toronto": {
+      "regular": 1.6,
+      "premium": 1.85,
+      "diesel": 1.7
+    },
+    "Vancouver": {
+      "regular": 1.75,
+      "premium": 2,
+      "diesel": 1.85
+    },
+    "Montreal": {
+      "regular": 1.65,
+      "premium": 1.9,
+      "diesel": 1.75
+    }
+  }
+}

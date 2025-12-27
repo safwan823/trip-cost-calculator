@@ -1,52 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import gasPricesData from '@/data/gas-prices.json';
 
-// Average gas prices by major U.S. cities (updated periodically)
-// Prices in USD per gallon
-const CITY_GAS_PRICES: Record<string, { regular: number; premium: number; diesel: number }> = {
-  // Northeast
-  'New York': { regular: 3.45, premium: 4.15, diesel: 3.85 },
-  'Boston': { regular: 3.42, premium: 4.10, diesel: 3.80 },
-  'Philadelphia': { regular: 3.38, premium: 4.05, diesel: 3.75 },
-  'Washington': { regular: 3.35, premium: 4.00, diesel: 3.70 },
-  'Baltimore': { regular: 3.36, premium: 4.02, diesel: 3.72 },
-
-  // Southeast
-  'Atlanta': { regular: 3.15, premium: 3.75, diesel: 3.50 },
-  'Miami': { regular: 3.30, premium: 3.90, diesel: 3.65 },
-  'Charlotte': { regular: 3.20, premium: 3.80, diesel: 3.55 },
-  'Jacksonville': { regular: 3.22, premium: 3.82, diesel: 3.57 },
-  'Nashville': { regular: 3.18, premium: 3.78, diesel: 3.53 },
-
-  // Midwest
-  'Chicago': { regular: 3.55, premium: 4.20, diesel: 3.90 },
-  'Detroit': { regular: 3.50, premium: 4.15, diesel: 3.85 },
-  'Indianapolis': { regular: 3.25, premium: 3.85, diesel: 3.60 },
-  'Columbus': { regular: 3.28, premium: 3.88, diesel: 3.63 },
-  'Milwaukee': { regular: 3.45, premium: 4.05, diesel: 3.80 },
-
-  // South
-  'Houston': { regular: 3.05, premium: 3.65, diesel: 3.40 },
-  'Dallas': { regular: 3.08, premium: 3.68, diesel: 3.43 },
-  'San Antonio': { regular: 3.10, premium: 3.70, diesel: 3.45 },
-  'Austin': { regular: 3.12, premium: 3.72, diesel: 3.47 },
-  'New Orleans': { regular: 3.15, premium: 3.75, diesel: 3.50 },
-
-  // West
-  'Los Angeles': { regular: 4.85, premium: 5.45, diesel: 5.15 },
-  'San Francisco': { regular: 5.15, premium: 5.75, diesel: 5.45 },
-  'San Diego': { regular: 4.75, premium: 5.35, diesel: 5.05 },
-  'Seattle': { regular: 4.55, premium: 5.15, diesel: 4.85 },
-  'Portland': { regular: 4.45, premium: 5.05, diesel: 4.75 },
-  'Phoenix': { regular: 3.65, premium: 4.25, diesel: 3.95 },
-  'Las Vegas': { regular: 4.15, premium: 4.75, diesel: 4.45 },
-  'Denver': { regular: 3.40, premium: 4.00, diesel: 3.70 },
-  'Salt Lake City': { regular: 3.55, premium: 4.15, diesel: 3.85 },
-
-  // Canada (CAD)
-  'Toronto': { regular: 1.60, premium: 1.85, diesel: 1.70 }, // CAD per liter
-  'Vancouver': { regular: 1.75, premium: 2.00, diesel: 1.85 },
-  'Montreal': { regular: 1.65, premium: 1.90, diesel: 1.75 },
-};
+// Load gas prices from JSON file
+const CITY_GAS_PRICES = gasPricesData.cities;
+const LAST_UPDATED = gasPricesData.lastUpdated;
+const PRICE_SOURCE = gasPricesData.source;
 
 // Default fallback prices if city not found
 const DEFAULT_PRICES = {
@@ -120,10 +78,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       averagePrice,
-      pricesByCityy: cityPrices,
+      pricesByCity: cityPrices,
       cities: citiesFound,
       fuelGrade,
       currency: 'usd',
+      lastUpdated: LAST_UPDATED,
+      source: PRICE_SOURCE,
     });
   } catch (error) {
     console.error('[GasPrices] Error:', error);
