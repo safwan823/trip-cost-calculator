@@ -11,6 +11,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Geocode locations if they don't have lat/lng
+    let geocodedLocations = locations;
+
+    // Check if locations need geocoding (have address but not lat/lng)
+    const needsGeocoding = locations.some((loc: { lat?: number; lng?: number; address?: string }) =>
+      !loc.lat || !loc.lng
+    );
+
+    if (needsGeocoding) {
+      const baseUrl = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : `http://localhost:${process.env.PORT || 3001}`;
+
+      const geocodeResponse = await fetch(`${baseUrl}/api/geocode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ addresses: locations }),
+      });
+
+      if (geocodeResponse.ok) {
+        const geocodeData = await geocodeResponse.json();
+        geocodedLocations = geocodeData.locations || [];
+        console.log('[GasStations] Geocoded', geocodedLocations.length, 'locations');
+      } else {
+        console.error('[GasStations] Geocoding failed');
+        return NextResponse.json({ gasStations: [] });
+      }
+    }
+
+    if (geocodedLocations.length === 0) {
+      console.log('[GasStations] No valid locations after geocoding');
+      return NextResponse.json({ gasStations: [] });
+    }
+
     // For each location, find nearby gas stations
     const allStations: Array<{
       name: string;
@@ -20,7 +54,7 @@ export async function POST(request: NextRequest) {
       priceLevel?: number;
     }> = [];
 
-    for (const location of locations) {
+    for (const location of geocodedLocations) {
       // Use Google Places API (New) to find nearby gas stations
       const response = await fetch(
         'https://places.googleapis.com/v1/places:searchNearby',
@@ -79,7 +113,7 @@ export async function POST(request: NextRequest) {
     try {
       const baseUrl = process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
-        : 'http://localhost:3000';
+        : `http://localhost:${process.env.PORT || 3001}`;
 
       const gasBuddyResponse = await fetch(`${baseUrl}/api/gasbuddy`, {
         method: 'POST',

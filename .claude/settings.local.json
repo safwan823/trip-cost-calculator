@@ -12,7 +12,12 @@
       "Bash(vercel:*)",
       "Bash(npm run build:*)",
       "Bash(node scripts/test-gasbuddy.js:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(curl:*)",
+      "Bash(if [ -f .env.local ])",
+      "Bash(then cat .env.local)",
+      "Bash(else echo \"No .env.local file found\")",
+      "Bash(fi)"
     ]
   }
 }
