@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import MapDisplay from '@/components/MapDisplay';
 import RouteInput from '@/components/RouteInput';
 import CostCalculator from '@/components/CostCalculator';
@@ -11,18 +11,20 @@ import { calculateTripCost } from '@/utils/calculations';
 export default function Home() {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
+  const [waypoints, setWaypoints] = useState<string[]>([]);
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
   const [tripCost, setTripCost] = useState<TripCost | null>(null);
 
-  const handleRouteSubmit = (newOrigin: string, newDestination: string) => {
+  const handleRouteSubmit = (newOrigin: string, newDestination: string, newWaypoints: string[]) => {
     setOrigin(newOrigin);
     setDestination(newDestination);
+    setWaypoints(newWaypoints);
     setTripCost(null); // Reset cost when route changes
   };
 
-  const handleRouteCalculated = (newRouteInfo: RouteInfo) => {
+  const handleRouteCalculated = useCallback((newRouteInfo: RouteInfo) => {
     setRouteInfo(newRouteInfo);
-  };
+  }, []);
 
   const handleCostCalculate = (vehicleInfo: VehicleInfo, fuelPrice: FuelPrice) => {
     if (!routeInfo) {
@@ -61,6 +63,7 @@ export default function Home() {
               <MapDisplay
                 origin={origin}
                 destination={destination}
+                waypoints={waypoints}
                 onRouteCalculated={handleRouteCalculated}
               />
             ) : (

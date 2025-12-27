@@ -8,11 +8,13 @@ import { metersToMiles, metersToKm, formatDuration } from '@/utils/calculations'
 interface MapDisplayProps {
   origin: string;
   destination: string;
+  waypoints?: string[];
   onRouteCalculated?: (routeInfo: RouteInfo) => void;
 }
 
-export default function MapDisplay({ origin, destination, onRouteCalculated }: MapDisplayProps) {
+export default function MapDisplay({ origin, destination, waypoints = [], onRouteCalculated }: MapDisplayProps) {
   const mapRef = useRef<HTMLDivElement>(null);
+  const polylineRef = useRef<google.maps.Polyline | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +25,7 @@ export default function MapDisplay({ origin, destination, onRouteCalculated }: M
     if (typeof window === 'undefined') return;
 
     // Check if already loaded
-    if (window.google?.maps) {
+    if (window.google?.maps?.Map) {
       console.log('Google Maps already loaded');
       setScriptLoaded(true);
       return;
@@ -32,7 +34,7 @@ export default function MapDisplay({ origin, destination, onRouteCalculated }: M
     // Check if script tag already exists
     if (document.querySelector('script[src*="maps.googleapis.com"]')) {
       const checkGoogle = setInterval(() => {
-        if (window.google?.maps) {
+        if (window.google?.maps?.Map) {
           console.log('Google Maps loaded');
           setScriptLoaded(true);
           clearInterval(checkGoogle);
@@ -41,15 +43,21 @@ export default function MapDisplay({ origin, destination, onRouteCalculated }: M
       return;
     }
 
-    // Create and load script with loading=async for new Places API
+    // Create and load script
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places,geometry&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places,geometry`;
     script.async = true;
     script.defer = true;
 
     script.onload = () => {
-      console.log('Google Maps script loaded');
-      setScriptLoaded(true);
+      // Wait for google.maps.Map to be available
+      const waitForMap = setInterval(() => {
+        if (window.google?.maps?.Map) {
+          console.log('Google Maps script loaded');
+          setScriptLoaded(true);
+          clearInterval(waitForMap);
+        }
+      }, 100);
     };
 
     script.onerror = () => {
@@ -87,7 +95,7 @@ export default function MapDisplay({ origin, destination, onRouteCalculated }: M
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ origin, destination }),
+          body: JSON.stringify({ origin, destination, waypoints }),
         });
 
         if (!response.ok) {
@@ -100,10 +108,10 @@ export default function MapDisplay({ origin, destination, onRouteCalculated }: M
         // Decode and display the polyline
         const path = window.google.maps.geometry.encoding.decodePath(data.polyline);
 
-        // Clear previous polylines
-        map.data.forEach((feature) => {
-          map.data.remove(feature);
-        });
+        // Clear previous polyline if it exists
+        if (polylineRef.current) {
+          polylineRef.current.setMap(null);
+        }
 
         // Draw the route
         const routePath = new window.google.maps.Polyline({
@@ -115,11 +123,12 @@ export default function MapDisplay({ origin, destination, onRouteCalculated }: M
         });
 
         routePath.setMap(map);
+        polylineRef.current = routePath;
 
-        // Fit map to route bounds
+        // Fit map to route bounds with padding to reduce jumping
         const bounds = new window.google.maps.LatLngBounds();
         path.forEach((point) => bounds.extend(point));
-        map.fitBounds(bounds);
+        map.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 });
 
         // Create route info
         const routeInfo: RouteInfo = {
@@ -140,7 +149,7 @@ export default function MapDisplay({ origin, destination, onRouteCalculated }: M
     };
 
     calculateRoute();
-  }, [map, origin, destination, onRouteCalculated]);
+  }, [map, origin, destination, waypoints, onRouteCalculated]);
 
   if (!scriptLoaded && !error) {
     return (
