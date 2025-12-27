@@ -22,14 +22,18 @@ export default function MapDisplay({ origin, destination, onRouteCalculated }: M
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    if (window.google && window.google.maps) {
+    // Check if already loaded
+    if (window.google?.maps) {
+      console.log('Google Maps already loaded');
       setScriptLoaded(true);
       return;
     }
 
+    // Check if script tag already exists
     if (document.querySelector('script[src*="maps.googleapis.com"]')) {
       const checkGoogle = setInterval(() => {
-        if (window.google && window.google.maps) {
+        if (window.google?.maps) {
+          console.log('Google Maps loaded');
           setScriptLoaded(true);
           clearInterval(checkGoogle);
         }
@@ -37,15 +41,30 @@ export default function MapDisplay({ origin, destination, onRouteCalculated }: M
       return;
     }
 
+    // Create and load script
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=geometry`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places,geometry`;
     script.async = true;
     script.defer = true;
 
-    script.onload = () => setScriptLoaded(true);
-    script.onerror = () => setError('Failed to load Google Maps');
+    script.onload = () => {
+      console.log('Google Maps script loaded');
+      setScriptLoaded(true);
+    };
+
+    script.onerror = () => {
+      console.error('Failed to load Google Maps');
+      setError('Failed to load Google Maps');
+    };
 
     document.head.appendChild(script);
+
+    return () => {
+      // Cleanup if component unmounts
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
   }, []);
 
   // Initialize map once script is loaded

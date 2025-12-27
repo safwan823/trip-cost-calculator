@@ -33,3 +33,48 @@ select:focus {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
+
+/* Google Maps Autocomplete Dropdown Styling */
+.pac-container {
+  z-index: 9999 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  margin-top: 4px !important;
+  border: 1px solid #e5e7eb !important;
+  font-family: inherit !important;
+}
+
+.pac-item {
+  padding: 10px 12px !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  border: none !important;
+  line-height: 1.5 !important;
+}
+
+.pac-item:hover {
+  background-color: #f3f4f6 !important;
+}
+
+.pac-item-selected {
+  background-color: #eff6ff !important;
+}
+
+.pac-icon {
+  margin-top: 3px !important;
+}
+
+.pac-item-query {
+  font-weight: 500 !important;
+  color: #111827 !important;
+}
+
+.pac-matched {
+  font-weight: 600 !important;
+}
+
+/* Ensure dropdown appears above other elements */
+.pac-container:after {
+  background-image: none !important;
+  height: 0 !important;
+}
