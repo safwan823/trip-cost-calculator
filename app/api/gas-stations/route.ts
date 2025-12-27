@@ -75,6 +75,51 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Enrich with GasBuddy real-time prices
+    try {
+      const baseUrl = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : 'http://localhost:3000';
+
+      const gasBuddyResponse = await fetch(`${baseUrl}/api/gasbuddy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stations: allStations }),
+      });
+
+      if (gasBuddyResponse.ok) {
+        const { prices } = await gasBuddyResponse.json();
+
+        // Merge GasBuddy prices into stations
+        allStations.forEach((station) => {
+          const priceData = prices.find(
+            (p: {
+              address: string;
+              stationName: string;
+              regularPrice?: number;
+              lastUpdated?: string;
+              source: string;
+            }) => p.address === station.address || p.stationName.includes(station.name)
+          );
+
+          if (priceData) {
+            (station as {
+              price?: number;
+              lastUpdated?: string;
+              priceSource?: string;
+            }).price = priceData.regularPrice;
+            (station as { lastUpdated?: string }).lastUpdated = priceData.lastUpdated;
+            (station as { priceSource?: string }).priceSource = priceData.source;
+          }
+        });
+
+        console.log(`[GasStations] Enriched ${prices.length} stations with GasBuddy prices`);
+      }
+    } catch (error) {
+      console.error('[GasStations] GasBuddy enrichment failed:', error);
+      // Continue without prices - graceful degradation
+    }
+
     return NextResponse.json({ gasStations: allStations });
   } catch (error) {
     console.error('Gas station fetch error:', error);

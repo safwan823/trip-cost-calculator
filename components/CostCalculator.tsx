@@ -91,7 +91,16 @@ export default function CostCalculator({ onCalculate, selectedGasStation }: Cost
         />
         {selectedGasStation ? (
           <p className="text-xs text-green-600 mt-1 font-medium">
-            ✓ Using price from {selectedGasStation.name}
+            ✓ Using {selectedGasStation.priceSource === 'gasbuddy'
+              ? 'real-time GasBuddy'
+              : selectedGasStation.priceSource === 'regional_average'
+              ? 'regional average'
+              : ''} price from {selectedGasStation.name}
+            {selectedGasStation.lastUpdated && (
+              <span className="text-gray-500 block">
+                (Updated {new Date(selectedGasStation.lastUpdated).toLocaleDateString()})
+              </span>
+            )}
           </p>
         ) : (
           <p className="text-xs text-gray-500 mt-1">

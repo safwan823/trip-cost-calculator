@@ -160,24 +160,63 @@ export default function GasStationSelector({ route, onStationSelect }: GasStatio
                 )}
               </div>
 
-              <div className="mt-3">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Enter Gas Price ($/gallon)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="e.g., 3.45"
-                  value={customPrices[station.address] || ''}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    handlePriceChange(station.address, e.target.value);
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+              {/* Display real-time GasBuddy price if available */}
+              {station.price ? (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-green-600">
+                      ${station.price.toFixed(2)}/gal
+                    </span>
+                    {station.priceSource === 'regional_average' && (
+                      <span className="text-xs text-orange-500 font-medium">
+                        (Regional Avg)
+                      </span>
+                    )}
+                  </div>
+                  {station.lastUpdated && (
+                    <p className="text-xs text-gray-500">
+                      Updated: {new Date(station.lastUpdated).toLocaleString()}
+                    </p>
+                  )}
+                  <div className="pt-2 border-t border-gray-200">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Override Price (optional)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder={`Current: $${station.price.toFixed(2)}`}
+                      value={customPrices[station.address] || ''}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handlePriceChange(station.address, e.target.value);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Enter Gas Price ($/gallon)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="e.g., 3.45"
+                    value={customPrices[station.address] || ''}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handlePriceChange(station.address, e.target.value);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              )}
 
               {selectedStation?.address === station.address && (
                 <div className="mt-2 text-xs text-blue-600 font-medium">
