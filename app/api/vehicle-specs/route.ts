@@ -161,53 +161,99 @@ export async function GET(request: NextRequest) {
 
         // If CSV has no data, try FuelEconomy.gov API
         try {
-          const response = await fetch(
+          // Try exact match first
+          let response = await fetch(
             `${FUEL_ECONOMY_BASE_URL}/vehicle/menu/options?year=${year}&make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`,
             { headers: { 'Accept': 'application/xml' } }
           );
 
+          let apiVehicleIds: string[] = [];
+
           if (response.ok) {
             const xml = await response.text();
-            const apiVehicleIds = extractXMLArray(xml, 'menuItem', 'value');
+            apiVehicleIds = extractXMLArray(xml, 'menuItem', 'value');
+          }
 
-            // Fetch details for each vehicle ID from API
-            const apiOptions = [];
-            for (const apiId of apiVehicleIds.slice(0, 10)) { // Limit to 10 options
-              try {
-                const detailResponse = await fetch(`${FUEL_ECONOMY_BASE_URL}/vehicle/${apiId}`, {
-                  headers: { 'Accept': 'application/xml' }
-                });
+          // If no exact match found, try fuzzy matching
+          if (apiVehicleIds.length === 0) {
+            console.log('[VehicleSpecs] No exact match for model, trying fuzzy matching...');
 
-                if (detailResponse.ok) {
-                  const detailXml = await detailResponse.text();
+            // Get all models for this year/make
+            const modelsResponse = await fetch(
+              `${FUEL_ECONOMY_BASE_URL}/vehicle/menu/model?year=${year}&make=${encodeURIComponent(make)}`,
+              { headers: { 'Accept': 'application/xml' } }
+            );
 
-                  // Extract vehicle details from XML
-                  const cityMpg = extractXMLValue(detailXml, 'city08') || '0';
-                  const highwayMpg = extractXMLValue(detailXml, 'highway08') || '0';
-                  const combinedMpg = extractXMLValue(detailXml, 'comb08') || '0';
-                  const fuelType = extractXMLValue(detailXml, 'fuelType') || 'Regular';
-                  const trims = extractXMLValue(detailXml, 'trany') || '';
+            if (modelsResponse.ok) {
+              const modelsXml = await modelsResponse.text();
+              const allModels = extractXMLArray(modelsXml, 'menuItem', 'value');
 
-                  apiOptions.push({
-                    id: `api_${apiId}`,
-                    description: `${fuelType} - ${combinedMpg} MPG combined (City: ${cityMpg}, Highway: ${highwayMpg}) ${trims ? `- ${trims}` : ''}`,
-                    apiVehicleId: apiId,
-                    cityMpg: parseInt(cityMpg),
-                    highwayMpg: parseInt(highwayMpg),
-                    combinedMpg: parseInt(combinedMpg),
-                    fuelType: fuelType.toLowerCase().includes('premium') ? 'premium' :
-                              fuelType.toLowerCase().includes('diesel') ? 'diesel' : 'regular'
-                  });
+              // Find models that contain our search term or vice versa
+              const modelLower = model.toLowerCase();
+              const fuzzyMatches = allModels.filter(apiModel => {
+                const apiModelLower = apiModel.toLowerCase();
+                return apiModelLower.includes(modelLower) || modelLower.includes(apiModelLower);
+              });
+
+              console.log('[VehicleSpecs] Found', fuzzyMatches.length, 'fuzzy matches:', fuzzyMatches);
+
+              // Try each fuzzy match
+              for (const fuzzyModel of fuzzyMatches) {
+                const fuzzyResponse = await fetch(
+                  `${FUEL_ECONOMY_BASE_URL}/vehicle/menu/options?year=${year}&make=${encodeURIComponent(make)}&model=${encodeURIComponent(fuzzyModel)}`,
+                  { headers: { 'Accept': 'application/xml' } }
+                );
+
+                if (fuzzyResponse.ok) {
+                  const fuzzyXml = await fuzzyResponse.text();
+                  const fuzzyIds = extractXMLArray(fuzzyXml, 'menuItem', 'value');
+                  apiVehicleIds.push(...fuzzyIds);
                 }
-              } catch (err) {
-                console.warn('[VehicleSpecs] Failed to fetch API vehicle details:', err);
+              }
+
+              if (apiVehicleIds.length > 0) {
+                console.log('[VehicleSpecs] Fuzzy matching found', apiVehicleIds.length, 'vehicle IDs');
               }
             }
+          }
 
-            if (apiOptions.length > 0) {
-              console.log('[VehicleSpecs] Found', apiOptions.length, 'options from FuelEconomy.gov API');
-              return NextResponse.json({ options: apiOptions, source: 'api' });
+          // Fetch details for each vehicle ID from API
+          const apiOptions = [];
+          for (const apiId of apiVehicleIds.slice(0, 10)) { // Limit to 10 options
+            try {
+              const detailResponse = await fetch(`${FUEL_ECONOMY_BASE_URL}/vehicle/${apiId}`, {
+                headers: { 'Accept': 'application/xml' }
+              });
+
+              if (detailResponse.ok) {
+                const detailXml = await detailResponse.text();
+
+                // Extract vehicle details from XML
+                const cityMpg = extractXMLValue(detailXml, 'city08') || '0';
+                const highwayMpg = extractXMLValue(detailXml, 'highway08') || '0';
+                const combinedMpg = extractXMLValue(detailXml, 'comb08') || '0';
+                const fuelType = extractXMLValue(detailXml, 'fuelType') || 'Regular';
+                const trims = extractXMLValue(detailXml, 'trany') || '';
+
+                apiOptions.push({
+                  id: `api_${apiId}`,
+                  description: `${fuelType} - ${combinedMpg} MPG combined (City: ${cityMpg}, Highway: ${highwayMpg}) ${trims ? `- ${trims}` : ''}`,
+                  apiVehicleId: apiId,
+                  cityMpg: parseInt(cityMpg),
+                  highwayMpg: parseInt(highwayMpg),
+                  combinedMpg: parseInt(combinedMpg),
+                  fuelType: fuelType.toLowerCase().includes('premium') ? 'premium' :
+                            fuelType.toLowerCase().includes('diesel') ? 'diesel' : 'regular'
+                });
+              }
+            } catch (err) {
+              console.warn('[VehicleSpecs] Failed to fetch API vehicle details:', err);
             }
+          }
+
+          if (apiOptions.length > 0) {
+            console.log('[VehicleSpecs] Found', apiOptions.length, 'options from FuelEconomy.gov API');
+            return NextResponse.json({ options: apiOptions, source: 'api' });
           }
         } catch (error) {
           console.warn('[VehicleSpecs] API failed for options:', error);
