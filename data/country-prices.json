@@ -1,0 +1,97 @@
+{
+  "lastUpdated": "2025-12-27",
+  "source": "manual",
+  "note": "Country-level average gas prices for international locations. Prices in USD per gallon (or CAD per liter for Canada).",
+  "countries": {
+    "Canada": {
+      "regular": 1.65,
+      "premium": 1.90,
+      "diesel": 1.75,
+      "unit": "CAD/liter"
+    },
+    "Mexico": {
+      "regular": 3.80,
+      "premium": 4.20,
+      "diesel": 3.90,
+      "unit": "USD/gallon"
+    },
+    "United Kingdom": {
+      "regular": 6.50,
+      "premium": 7.00,
+      "diesel": 6.80,
+      "unit": "USD/gallon"
+    },
+    "Germany": {
+      "regular": 6.80,
+      "premium": 7.20,
+      "diesel": 6.50,
+      "unit": "USD/gallon"
+    },
+    "France": {
+      "regular": 7.00,
+      "premium": 7.50,
+      "diesel": 6.70,
+      "unit": "USD/gallon"
+    },
+    "Italy": {
+      "regular": 7.20,
+      "premium": 7.70,
+      "diesel": 6.90,
+      "unit": "USD/gallon"
+    },
+    "Spain": {
+      "regular": 6.40,
+      "premium": 6.90,
+      "diesel": 6.20,
+      "unit": "USD/gallon"
+    },
+    "Australia": {
+      "regular": 5.20,
+      "premium": 5.70,
+      "diesel": 5.40,
+      "unit": "USD/gallon"
+    },
+    "Japan": {
+      "regular": 5.80,
+      "premium": 6.30,
+      "diesel": 5.50,
+      "unit": "USD/gallon"
+    },
+    "China": {
+      "regular": 4.90,
+      "premium": 5.40,
+      "diesel": 4.70,
+      "unit": "USD/gallon"
+    },
+    "India": {
+      "regular": 4.50,
+      "premium": 5.00,
+      "diesel": 4.20,
+      "unit": "USD/gallon"
+    },
+    "Brazil": {
+      "regular": 4.80,
+      "premium": 5.30,
+      "diesel": 4.50,
+      "unit": "USD/gallon"
+    },
+    "Saudi Arabia": {
+      "regular": 2.00,
+      "premium": 2.30,
+      "diesel": 1.80,
+      "unit": "USD/gallon"
+    },
+    "UAE": {
+      "regular": 2.50,
+      "premium": 2.80,
+      "diesel": 2.30,
+      "unit": "USD/gallon"
+    },
+    "South Africa": {
+      "regular": 5.00,
+      "premium": 5.50,
+      "diesel": 4.80,
+      "unit": "USD/gallon"
+    }
+  }
+}

@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import gasPricesData from '@/data/gas-prices.json';
+import cityPricesData from '@/data/gas-prices.json';
+import statePricesData from '@/data/us-state-prices.json';
+import countryPricesData from '@/data/country-prices.json';
 
-// Load gas prices from JSON file
-const CITY_GAS_PRICES = gasPricesData.cities;
-const LAST_UPDATED = gasPricesData.lastUpdated;
-const PRICE_SOURCE = gasPricesData.source;
+// Load gas prices from JSON files
+const CITY_GAS_PRICES = cityPricesData.cities;
+const STATE_GAS_PRICES = statePricesData.states;
+const COUNTRY_GAS_PRICES = countryPricesData.countries;
+const LAST_UPDATED = cityPricesData.lastUpdated;
+const PRICE_SOURCE = cityPricesData.source;
 
-// Default fallback prices if city not found
+// US State abbreviations mapping
+const US_STATES = {
+  'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
+  'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'DC': 'District of Columbia',
+  'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois',
+  'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana',
+  'ME': 'Maine', 'MD': 'Maryland', 'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota',
+  'MS': 'Mississippi', 'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+  'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+  'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma', 'OR': 'Oregon',
+  'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina', 'SD': 'South Dakota',
+  'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah', 'VT': 'Vermont', 'VA': 'Virginia',
+  'WA': 'Washington', 'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming'
+};
+
+// Default fallback prices if nothing found
 const DEFAULT_PRICES = {
   regular: 3.50,
   premium: 4.10,
@@ -14,31 +33,89 @@ const DEFAULT_PRICES = {
 };
 
 /**
- * Extract city name from full address
+ * Extract state code from address
  * Examples:
- *  "New York, NY" -> "New York"
- *  "Los Angeles, CA 90001" -> "Los Angeles"
- *  "123 Main St, Chicago, IL" -> "Chicago"
+ *  "El Paso, TX" -> "TX"
+ *  "123 Main St, New York, NY 10001" -> "NY"
  */
-function extractCityName(address: string): string {
-  // Split by comma and take the first part that looks like a city
+function extractStateCode(address: string): string | null {
   const parts = address.split(',').map(p => p.trim());
 
   for (const part of parts) {
-    // Remove any numbers (zip codes, street numbers)
+    // Look for state abbreviation (2 uppercase letters)
+    const match = part.match(/\b([A-Z]{2})\b/);
+    if (match && US_STATES[match[1] as keyof typeof US_STATES]) {
+      return match[1];
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extract country from address
+ */
+function extractCountry(address: string): string | null {
+  const addressLower = address.toLowerCase();
+
+  for (const country in COUNTRY_GAS_PRICES) {
+    if (addressLower.includes(country.toLowerCase())) {
+      return country;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get gas prices for any location worldwide
+ * Priority: 1. City match, 2. State match (US), 3. Country match, 4. Default
+ */
+function getPricesForLocation(address: string): { regular: number; premium: number; diesel: number; source: string; location: string } {
+  const parts = address.split(',').map(p => p.trim());
+
+  // 1. Try to match specific city
+  for (const part of parts) {
     const cleaned = part.replace(/\d+/g, '').trim();
 
-    // Check if this matches a known city
     for (const city in CITY_GAS_PRICES) {
       if (cleaned.toLowerCase().includes(city.toLowerCase()) ||
           city.toLowerCase().includes(cleaned.toLowerCase())) {
-        return city;
+        return {
+          ...CITY_GAS_PRICES[city],
+          source: 'city',
+          location: city
+        };
       }
     }
   }
 
-  // If no match, return the cleaned first part
-  return parts[0].replace(/\d+/g, '').trim();
+  // 2. Try to match US state
+  const stateCode = extractStateCode(address);
+  if (stateCode && STATE_GAS_PRICES[stateCode as keyof typeof STATE_GAS_PRICES]) {
+    return {
+      ...STATE_GAS_PRICES[stateCode as keyof typeof STATE_GAS_PRICES],
+      source: 'state',
+      location: `${US_STATES[stateCode as keyof typeof US_STATES]} (${stateCode})`
+    };
+  }
+
+  // 3. Try to match country
+  const country = extractCountry(address);
+  if (country && COUNTRY_GAS_PRICES[country]) {
+    return {
+      ...COUNTRY_GAS_PRICES[country],
+      source: 'country',
+      location: country
+    };
+  }
+
+  // 4. Default fallback
+  return {
+    ...DEFAULT_PRICES,
+    source: 'default',
+    location: 'Unknown'
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -54,36 +131,39 @@ export async function POST(request: NextRequest) {
 
     console.log('[GasPrices] Fetching prices for', locations.length, 'locations');
 
-    // Calculate average price across all cities in the route
-    const cityPrices: number[] = [];
-    const citiesFound: string[] = [];
+    // Calculate average price across all locations in the route
+    const locationPrices: number[] = [];
+    const locationsFound: Array<{ location: string; source: string; price: number }> = [];
 
     for (const location of locations) {
       const address = location.address || location.city || location;
-      const cityName = extractCityName(address);
+      const priceData = getPricesForLocation(address);
 
-      const prices = CITY_GAS_PRICES[cityName] || DEFAULT_PRICES;
-      const price = prices[fuelGrade as 'regular' | 'premium' | 'diesel'] || prices.regular;
+      const price = priceData[fuelGrade as 'regular' | 'premium' | 'diesel'] || priceData.regular;
 
-      cityPrices.push(price);
-      citiesFound.push(cityName);
+      locationPrices.push(price);
+      locationsFound.push({
+        location: priceData.location,
+        source: priceData.source,
+        price
+      });
 
-      console.log(`[GasPrices] ${cityName}: $${price.toFixed(2)} (${fuelGrade})`);
+      console.log(`[GasPrices] ${priceData.location} (${priceData.source}): $${price.toFixed(2)} (${fuelGrade})`);
     }
 
     // Calculate average
-    const averagePrice = cityPrices.reduce((a, b) => a + b, 0) / cityPrices.length;
+    const averagePrice = locationPrices.reduce((a, b) => a + b, 0) / locationPrices.length;
 
     console.log(`[GasPrices] Average price: $${averagePrice.toFixed(2)}`);
 
     return NextResponse.json({
       averagePrice,
-      pricesByCity: cityPrices,
-      cities: citiesFound,
+      pricesByLocation: locationPrices,
+      locations: locationsFound,
       fuelGrade,
       currency: 'usd',
       lastUpdated: LAST_UPDATED,
-      source: PRICE_SOURCE,
+      dataSource: PRICE_SOURCE,
     });
   } catch (error) {
     console.error('[GasPrices] Error:', error);
