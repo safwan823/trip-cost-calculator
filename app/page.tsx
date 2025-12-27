@@ -89,80 +89,101 @@ export default function Home() {
   }, [routeInfo, vehicleSpec, origin, destination, waypoints]);
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-blue-600 text-white py-6 shadow-lg">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl font-bold">Trip Cost Calculator</h1>
-          <p className="text-blue-100 mt-2">
-            Calculate fuel costs for your road trips using real-time route data
-          </p>
+    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+      {/* Mobile-First Header */}
+      <header className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg sticky top-0 z-50">
+        <div className="px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold">Fuel Trip</h1>
+              <p className="text-xs sm:text-sm text-blue-100">Calculate your road trip costs</p>
+            </div>
+            <div className="bg-blue-500 bg-opacity-30 rounded-full p-3">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+          </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Inputs */}
-          <div className="space-y-6">
-            {/* Step 1: Vehicle Selection (FIRST) */}
-            <VehicleSelector
-              onVehicleSelect={handleVehicleSelect}
-              disabled={false}
-            />
-
-            {/* Step 2: Route Input (enabled after vehicle selection) */}
-            <div className={!vehicleSpec ? 'opacity-50 pointer-events-none' : ''}>
-              {!vehicleSpec && (
-                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-4 text-sm">
-                  Please select your vehicle first
-                </div>
-              )}
-              <RouteInput onSubmit={handleRouteSubmit} />
+      {/* Main Content - Mobile Stack Layout */}
+      <div className="pb-20">
+        {/* Step Indicator */}
+        <div className="bg-white border-b px-4 py-3">
+          <div className="flex items-center justify-center space-x-2 text-sm">
+            <div className={`flex items-center ${vehicleSpec ? 'text-green-600' : 'text-blue-600'}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${vehicleSpec ? 'bg-green-100' : 'bg-blue-100'} mr-1`}>
+                {vehicleSpec ? '✓' : '1'}
+              </div>
+              <span className="font-medium hidden sm:inline">Vehicle</span>
+            </div>
+            <div className="flex-1 h-0.5 bg-gray-200"></div>
+            <div className={`flex items-center ${origin && destination ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${origin && destination ? 'bg-green-100' : 'bg-gray-100'} mr-1`}>
+                {origin && destination ? '✓' : '2'}
+              </div>
+              <span className="font-medium hidden sm:inline">Route</span>
+            </div>
+            <div className="flex-1 h-0.5 bg-gray-200"></div>
+            <div className={`flex items-center ${tripCost ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${tripCost ? 'bg-green-100' : 'bg-gray-100'} mr-1`}>
+                {tripCost ? '✓' : '3'}
+              </div>
+              <span className="font-medium hidden sm:inline">Cost</span>
             </div>
           </div>
+        </div>
 
-          {/* Right Column - Map and Results */}
-          <div className="lg:col-span-2 space-y-6">
-            {origin && destination ? (
+        {/* Vehicle Selection Section */}
+        <div className="px-4 py-4">
+          <VehicleSelector
+            onVehicleSelect={handleVehicleSelect}
+            disabled={false}
+          />
+        </div>
+
+        {/* Route Input Section */}
+        {vehicleSpec && (
+          <div className="px-4 py-4 bg-white border-t">
+            <RouteInput onSubmit={handleRouteSubmit} />
+          </div>
+        )}
+
+        {/* Map Section */}
+        {origin && destination && (
+          <div className="px-4 py-4 bg-gradient-to-b from-gray-50 to-white">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <MapDisplay
                 origin={origin}
                 destination={destination}
                 waypoints={waypoints}
                 onRouteCalculated={handleRouteCalculated}
               />
-            ) : (
-              <div className="bg-white p-12 rounded-lg shadow-md text-center text-gray-500">
-                <svg
-                  className="w-24 h-24 mx-auto mb-4 text-gray-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                  />
-                </svg>
-                <p className="text-lg">Enter your route details to get started</p>
-              </div>
-            )}
+            </div>
+          </div>
+        )}
 
+        {/* Results Section */}
+        {tripCost && (
+          <div className="px-4 py-4">
             <ResultsDisplay tripCost={tripCost} />
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Footer */}
-      <footer className="bg-gray-800 text-white py-6 mt-12">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-400">
-            Built with Next.js, Google Maps API, and Vercel
-          </p>
-        </div>
-      </footer>
+        {/* Empty State */}
+        {!origin && !destination && vehicleSpec && (
+          <div className="px-4 py-12 text-center">
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+              <svg className="w-16 h-16 mx-auto mb-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+              </svg>
+              <p className="text-gray-600 font-medium">Ready to calculate your trip!</p>
+              <p className="text-sm text-gray-400 mt-2">Enter your route above to get started</p>
+            </div>
+          </div>
+        )}
+      </div>
     </main>
   );
 }

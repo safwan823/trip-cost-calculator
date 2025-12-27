@@ -167,10 +167,17 @@ export default function VehicleSelector({ onVehicleSelect, disabled = false }: V
   }
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-800">Step 1: Select Your Vehicle</h2>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
+        <div className="flex items-center text-white">
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+          </svg>
+          <h2 className="text-base sm:text-lg font-semibold">Select Your Vehicle</h2>
+        </div>
       </div>
+
+      <div className="p-4 space-y-4">
 
       {/* Breadcrumb navigation - show selected values with edit buttons */}
       {(selectedYear || selectedMake || selectedModel) && (
@@ -235,15 +242,15 @@ export default function VehicleSelector({ onVehicleSelect, disabled = false }: V
           {/* Step 1: Year */}
           {step === 'year' && (
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Year</label>
+              <label className="block text-sm font-semibold text-gray-700">Vehicle Year</label>
               <select
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 appearance-none cursor-pointer"
                 onChange={(e) => handleYearSelect(Number(e.target.value))}
                 disabled={disabled}
                 defaultValue=""
               >
                 <option value="" disabled>
-                  Select Year...
+                  Tap to select year...
                 </option>
                 {years.map((y) => (
                   <option key={y} value={y}>
@@ -256,90 +263,83 @@ export default function VehicleSelector({ onVehicleSelect, disabled = false }: V
 
           {/* Step 2: Make */}
           {step === 'make' && selectedYear && (
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Year:</span> {selectedYear}
-              </p>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Make</label>
-                <select
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  onChange={(e) => handleMakeSelect(e.target.value)}
-                  disabled={disabled}
-                  defaultValue=""
-                >
-                  <option value="" disabled>
-                    Select Make...
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">Vehicle Make</label>
+              <select
+                className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 appearance-none cursor-pointer"
+                onChange={(e) => handleMakeSelect(e.target.value)}
+                disabled={disabled}
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  Tap to select make...
+                </option>
+                {makes.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
                   </option>
-                  {makes.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                ))}
+              </select>
             </div>
           )}
 
           {/* Step 3: Model */}
           {step === 'model' && selectedMake && (
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Year:</span> {selectedYear} |{' '}
-                <span className="font-medium">Make:</span> {selectedMake}
-              </p>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Model</label>
-                <select
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  onChange={(e) => handleModelSelect(e.target.value)}
-                  disabled={disabled}
-                  defaultValue=""
-                >
-                  <option value="" disabled>
-                    Select Model...
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-gray-700">Vehicle Model</label>
+              <select
+                className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 appearance-none cursor-pointer"
+                onChange={(e) => handleModelSelect(e.target.value)}
+                disabled={disabled}
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  Tap to select model...
+                </option>
+                {models.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
                   </option>
-                  {models.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                ))}
+              </select>
             </div>
           )}
 
           {/* Step 4: Review */}
           {step === 'review' && vehicleSpec && (
             <div className="space-y-4">
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <div className="mb-3">
-                  <h3 className="font-semibold text-blue-900 text-lg">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border-2 border-blue-200">
+                <div className="mb-4">
+                  <div className="flex items-center mb-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                    <span className="text-xs font-medium text-green-700">Vehicle Selected</span>
+                  </div>
+                  <h3 className="font-bold text-blue-900 text-lg">
                     {vehicleSpec.year} {vehicleSpec.make} {vehicleSpec.model}
                   </h3>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="bg-white p-3 rounded">
-                    <span className="text-gray-600 block text-xs">Fuel Type</span>
-                    <span className="font-medium text-gray-900 capitalize">
+                <div className="grid grid-cols-2 gap-2 text-sm mb-4">
+                  <div className="bg-white p-3 rounded-lg shadow-sm">
+                    <span className="text-gray-500 block text-xs uppercase tracking-wide">Fuel Type</span>
+                    <span className="font-semibold text-gray-900 capitalize text-base">
                       {vehicleSpec.fuelType}
                     </span>
                   </div>
 
-                  <div className="bg-white p-3 rounded">
-                    <span className="text-gray-600 block text-xs">Combined MPG</span>
-                    <span className="font-medium text-gray-900">{vehicleSpec.combinedMpg}</span>
+                  <div className="bg-white p-3 rounded-lg shadow-sm">
+                    <span className="text-gray-500 block text-xs uppercase tracking-wide">Combined</span>
+                    <span className="font-semibold text-gray-900 text-base">{vehicleSpec.combinedMpg} MPG</span>
                   </div>
 
-                  <div className="bg-white p-3 rounded">
-                    <span className="text-gray-600 block text-xs">Highway MPG</span>
-                    <span className="font-medium text-gray-900">{vehicleSpec.highwayMpg}</span>
+                  <div className="bg-white p-3 rounded-lg shadow-sm">
+                    <span className="text-gray-500 block text-xs uppercase tracking-wide">Highway</span>
+                    <span className="font-semibold text-gray-900 text-base">{vehicleSpec.highwayMpg} MPG</span>
                   </div>
 
-                  <div className="bg-white p-3 rounded">
-                    <span className="text-gray-600 block text-xs">City MPG</span>
-                    <span className="font-medium text-gray-900">{vehicleSpec.cityMpg}</span>
+                  <div className="bg-white p-3 rounded-lg shadow-sm">
+                    <span className="text-gray-500 block text-xs uppercase tracking-wide">City</span>
+                    <span className="font-semibold text-gray-900 text-base">{vehicleSpec.cityMpg} MPG</span>
                   </div>
                 </div>
 
@@ -374,14 +374,20 @@ export default function VehicleSelector({ onVehicleSelect, disabled = false }: V
               <button
                 onClick={handleConfirm}
                 disabled={disabled}
-                className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-xl font-semibold text-base shadow-lg hover:shadow-xl hover:from-green-700 hover:to-green-800 transition-all disabled:bg-gray-400 disabled:cursor-not-allowed active:scale-95"
               >
-                Confirm Vehicle Selection
+                <span className="flex items-center justify-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Confirm Vehicle
+                </span>
               </button>
             </div>
           )}
         </>
       )}
+      </div>
     </div>
   );
 }
