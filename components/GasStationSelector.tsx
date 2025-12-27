@@ -29,27 +29,23 @@ export default function GasStationSelector({ route, onStationSelect }: GasStatio
           { address: route.destination, city: route.destination.split(',')[0] },
         ];
 
-        // Geocode each location
-        const geocodedLocations = await Promise.all(
-          locations.map(async (loc) => {
-            const response = await fetch(
-              `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-                loc.address
-              )}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
-            );
-            const data = await response.json();
-            if (data.results && data.results[0]) {
-              return {
-                lat: data.results[0].geometry.location.lat,
-                lng: data.results[0].geometry.location.lng,
-                city: loc.city,
-              };
-            }
-            return null;
-          })
-        );
+        // Geocode locations using server-side API
+        const geocodeResponse = await fetch('/api/geocode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ addresses: locations }),
+        });
 
-        const validLocations = geocodedLocations.filter(loc => loc !== null);
+        const geocodeData = await geocodeResponse.json();
+        const validLocations = geocodeData.locations || [];
+
+        console.log('[GasStationSelector] Valid locations:', validLocations);
+
+        if (validLocations.length === 0) {
+          console.error('[GasStationSelector] No valid locations to search');
+          setLoading(false);
+          return;
+        }
 
         // Fetch gas stations near these locations
         const response = await fetch('/api/gas-stations', {
@@ -59,11 +55,16 @@ export default function GasStationSelector({ route, onStationSelect }: GasStatio
         });
 
         const data = await response.json();
+        console.log('[GasStationSelector] API response:', data);
+
         if (data.gasStations) {
+          console.log('[GasStationSelector] Found', data.gasStations.length, 'stations');
           setGasStations(data.gasStations);
+        } else if (data.error) {
+          console.error('[GasStationSelector] API error:', data.error);
         }
       } catch (error) {
-        console.error('Error fetching gas stations:', error);
+        console.error('[GasStationSelector] Error fetching gas stations:', error);
       } finally {
         setLoading(false);
       }
